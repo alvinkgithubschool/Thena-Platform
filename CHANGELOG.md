@@ -1,0 +1,75 @@
+# Changelog
+
+## [Unreleased]
+
+### Added
+- Initial project plan (`THENA_PLAN.md`) created.
+- Setup prompt (`THENA_SETUP_PROMPT.md`) created.
+- Started scaffolding Laravel project `thena`.
+- Installed backend dependencies: `inertiajs/inertia-laravel`, `tymon/jwt-auth`.
+- Installing `attestto/solana-php-sdk`.
+- Installing frontend dependencies (React, Solana, Shadcn).
+- Recovered from accidental deletion of `composer.json` and `vendor`.
+- Configured Inertia.js + React + Vite.
+- Manually initialized Shadcn UI structure (`components.json`, `utils.js`, `@` alias).
+- Created `Welcome` page with Thena branding (Black/White/Orange).
+- Configured Laravel routes for Inertia.
+- Added `jsconfig.json` to support Shadcn CLI aliases.
+- Installing Shadcn UI components (Button, Card, Table, etc.).
+- Created database migrations for `campaigns` and `donations`.
+- Fixed React version mismatch in `package.json` (React 19).
+- Installed Shadcn UI components: Button, Card, Input, Label, Sheet, DropdownMenu, Avatar, Progress, Table, Badge, Separator.
+- Defined DB Schemas:
+    - `campaigns`: title, desc, creator_wallet, target, current, pda.
+    - `donations`: campaign_id, donor_wallet, amount, tx_sig.
+- Implemented Wallet Authentication:
+    - Backend: `WalletAuthController` (requestNonce, verifySignature).
+    - Routes: `/api/auth/wallet/nonce` and `/api/auth/wallet/verify`.
+    - Frontend: `SolanaProvider` context and `ConnectWallet` component.
+    - Polyfilled `Buffer` for Solana Web3.js compatibility.
+- Scaffolding Dashboard:
+    - Created `DashboardLayout.jsx` with responsive sidebar.
+    - Created `Dashboard/Index.jsx` with overview stats and charts using Recharts.
+    - Updated `WalletAuthController` to use session-based login (`Auth::login`) for Inertia support.
+    - Registered dashboard route in `web.php`.
+- Version Control:
+    - Initialized Git repository.
+    - Pushed initial codebase to `https://github.com/alvinkgithubschool/Thena-Platform.git`.
+
+### MVP UI & Flow
+- Refactored `Welcome.jsx` landing page to a Linkify-style layout with:
+    - Framed hero section, metrics strip, and Problem/Solution/Features sections.
+    - Clear CTAs to **Browse Campaigns** (`/campaigns`) and **Start a Campaign** (`/campaigns/create`).
+- Implemented `Campaigns/Index.jsx` as the browse page:
+    - Shows active campaigns from the `campaigns` table.
+    - When no real campaigns exist, renders three curated demo campaigns with a clear "demo" label.
+    - Added client-side search + basic filter hooks so campaigns can be narrowed instantly.
+- Fixed stray `@routes` text by removing unused Ziggy directive from `resources/views/app.blade.php`.
+- Added a minimal named `login` route to satisfy Laravel's `auth` middleware redirect.
+- Relaxed auth on campaign creation during prototyping:
+    - Kept `/dashboard` behind `auth`.
+    - Exposed `campaigns.create` and `campaigns.store` publicly for smoother UX.
+- Implemented a 3-step campaign creation wizard in `Campaigns/Create.jsx`:
+    - Step 1: Project Details (title, description).
+    - Step 2: Funding Goals (target SOL, deadline).
+    - Step 3: Review & Launch summary.
+    - Uses Inertia's `useForm` and posts to `POST /campaigns`.
+    - Refactored into a standalone Shadcn-styled page with top nav + wallet button (no dashboard layout dependency).
+- Updated `CampaignController@store` to:
+    - Safely handle unauthenticated users by defaulting `creator_wallet` to a demo value if `Auth::user()` is null.
+    - Redirect authenticated wallet users to `/dashboard` and guests back to `/campaigns`.
+- Hardened `DashboardLayout.jsx`:
+    - Removed usage of Ziggy's `route()` helper in favor of `window.location.pathname`-based checks.
+    - Guarded access to `auth` props to avoid null errors.
+- Frontend dependencies updated:
+    - Installed `@radix-ui/react-icons` for Shadcn `Sheet` close icons.
+    - Installed `@solana/spl-token` to satisfy new `@reown/appkit-adapter-solana` dependency.
+- Added `CampaignController@show` + `Campaigns/Show.jsx` to deliver per-campaign detail pages with wallet-aware funding panels, progress bars, and donation UI.
+- Built donation backend:
+    - `Donation` model + migration with `campaign_id`, `donor_wallet`, `amount_sol`, `transaction_signature`.
+    - `DonationController@store` and `POST /campaigns/{campaign}/donations` route increment campaign totals.
+- Wired Solana devnet donation flow on the frontend using `@solana/web3.js` and the AppKit wallet provider (build, sign, send tx, then record donation via Axios).
+- Reintroduced wallet connect via Reown AppKit with cleaned up `AppKitProvider` (devnet config, Phantom/Solflare adapters, theme overrides).
+- Rebuilt `ConnectWallet.jsx` with AppKit hooks + new `UserMenu` dropdown so authenticated users can reach creator/backer dashboards or log out.
+- Added `/dashboard/backer` page + logout route for wallet-authenticated sessions.
+- Synced documentation (THENA_MVP_OVERVIEW, README, PLAN, CHANGELOG) to capture the new flows and wallet connect behavior.
