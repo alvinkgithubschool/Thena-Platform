@@ -1,31 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { useWallet } from '@solana/wallet-adapter-react';
-import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useAppKit, useAppKitAccount, useAppKitProvider } from '@reown/appkit/react';
 import axios from 'axios';
 import { router, usePage } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Wallet, Loader2 } from 'lucide-react';
+import UserMenu from './UserMenu';
 
 export default function ConnectWallet() {
-    const { publicKey, signMessage, disconnect } = useWallet();
+    const { open } = useAppKit();
+    const { address, isConnected } = useAppKitAccount();
+    const { walletProvider } = useAppKitProvider('solana');
     const [isAuthenticating, setIsAuthenticating] = useState(false);
     const { auth } = usePage().props;
 
     useEffect(() => {
         // If wallet is connected but user is not logged in (Laravel auth), start auth flow
-        if (publicKey && !auth?.user) {
+        if (isConnected && address && !auth?.user) {
             authenticate();
         } 
         // If wallet connected AND user logged in, redirect to dashboard if on welcome page
-        else if (publicKey && auth?.user && window.location.pathname === '/') {
+        else if (isConnected && address && auth?.user && window.location.pathname === '/') {
             router.visit('/dashboard');
         }
-    }, [publicKey, auth]);
+    }, [isConnected, address, auth]);
 
     const authenticate = async () => {
-        if (!publicKey || !signMessage) return;
+        if (!walletProvider) return;
         setIsAuthenticating(true);
 
         try {
-            const walletAddress = publicKey.toBase58();
+            const walletAddress = address;
             const { data: { nonce } } = await axios.post('/api/auth/wallet/nonce', {
                 wallet_address: walletAddress
             });
@@ -33,7 +37,9 @@ export default function ConnectWallet() {
             const message = new TextEncoder().encode(
                 `Sign this message to authenticate with Thena.\nNonce: ${nonce}`
             );
-            const signature = await signMessage(message);
+
+            // AppKit Solana provider exposes standard adapter methods
+            const signature = await walletProvider.signMessage(message);
             const signatureBase64 = btoa(String.fromCharCode(...signature));
 
             await axios.post('/api/auth/wallet/verify', {
@@ -46,15 +52,41 @@ export default function ConnectWallet() {
 
         } catch (error) {
             console.error("Authentication failed", error);
-            disconnect();
+            // We might want to disconnect here if auth fails, but AppKit manages connection state.
         } finally {
             setIsAuthenticating(false);
         }
     };
 
+    // Show UserMenu if wallet connected AND user authenticated
+    if (isConnected && address && auth?.user) {
+        return <UserMenu auth={auth} />;
+    }
+
+    // Show authenticating state if wallet connected but not yet authenticated
+    if (isConnected && address && !auth?.user && isAuthenticating) {
+        return (
+            <Button 
+                variant="outline"
+                size="sm"
+                className="border-zinc-700 text-zinc-100 gap-2"
+                disabled
+            >
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="hidden sm:inline">Authenticating...</span>
+            </Button>
+        );
+    }
+
     return (
-        <WalletMultiButton className="!bg-white !text-black !font-medium !rounded-lg hover:!bg-gray-200 !h-10 !px-4">
-            {isAuthenticating ? 'Signing...' : 'Connect Wallet'}
-        </WalletMultiButton>
+        <Button 
+            onClick={() => open()} 
+            variant="default"
+            size="sm"
+            className="bg-orange-500 hover:bg-orange-600 text-white gap-2"
+        >
+            <Wallet className="w-4 h-4" />
+            <span className="hidden sm:inline">Connect Wallet</span>
+        </Button>
     );
 }

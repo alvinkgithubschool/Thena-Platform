@@ -33,8 +33,11 @@ class CampaignController extends Controller
         // TODO: Handle Image Upload to S3/Storage and get URL
         $imageUrl = 'https://placehold.co/600x400/18181b/f97316?text=' . urlencode($request->title);
 
+        $creator = Auth::user();
+        $creatorWallet = $creator?->wallet_address ?? 'demo_wallet_address';
+
         $campaign = Campaign::create([
-            'creator_wallet' => Auth::user()->wallet_address,
+            'creator_wallet' => $creatorWallet,
             'title' => $request->title,
             'description' => $request->description,
             'target_amount_sol' => $request->target_amount_sol,
@@ -44,7 +47,12 @@ class CampaignController extends Controller
             'status' => 'active',
         ]);
 
-        return redirect()->route('dashboard')->with('success', 'Campaign created successfully!');
+        // If user is authenticated, redirect to dashboard; otherwise to campaigns index
+        if (Auth::check()) {
+            return redirect()->route('dashboard')->with('success', 'Campaign created successfully!');
+        }
+        
+        return redirect()->route('campaigns.index')->with('success', 'Campaign created successfully!');
     }
 
     public function index()
@@ -52,6 +60,16 @@ class CampaignController extends Controller
         $campaigns = Campaign::where('status', 'active')->latest()->get();
         return Inertia::render('Campaigns/Index', [
             'campaigns' => $campaigns
+        ]);
+    }
+
+    /**
+     * Display a specific campaign.
+     */
+    public function show(Campaign $campaign)
+    {
+        return Inertia::render('Campaigns/Show', [
+            'campaign' => $campaign,
         ]);
     }
 }

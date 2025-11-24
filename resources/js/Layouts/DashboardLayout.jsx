@@ -15,7 +15,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 
 export default function DashboardLayout({ children }) {
-    const { auth } = usePage().props;
+    const page = usePage();
+    const auth = page.props?.auth;
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
     const [isOpen, setIsOpen] = useState(false);
 
     const NavItem = ({ href, icon: Icon, label, active }) => (
@@ -42,31 +44,33 @@ export default function DashboardLayout({ children }) {
             <div className="px-4 py-2">
                 <div className="space-y-1">
                     <h4 className="mb-2 px-2 text-xs font-semibold tracking-tight text-zinc-500 uppercase">Platform</h4>
-                    <NavItem href="/dashboard" icon={LayoutDashboard} label="Overview" active={route().current('dashboard')} />
-                    <NavItem href="/campaigns/create" icon={PlusCircle} label="Start Campaign" active={route().current('campaigns.create')} />
-                    <NavItem href="/campaigns" icon={Wallet} label="My Campaigns" active={route().current('campaigns.index')} />
+                    <NavItem href="/dashboard" icon={LayoutDashboard} label="Overview" active={currentPath.startsWith('/dashboard')} />
+                    <NavItem href="/campaigns/create" icon={PlusCircle} label="Start Campaign" active={currentPath.startsWith('/campaigns/create')} />
+                    <NavItem href="/campaigns" icon={Wallet} label="My Campaigns" active={currentPath.startsWith('/campaigns')} />
                 </div>
                 
                 <Separator className="my-4 bg-zinc-800" />
                 
                 <div className="space-y-1">
                     <h4 className="mb-2 px-2 text-xs font-semibold tracking-tight text-zinc-500 uppercase">Settings</h4>
-                    <NavItem href="/profile" icon={Settings} label="Profile" active={route().current('profile.edit')} />
+                    <NavItem href="/profile" icon={Settings} label="Profile" active={currentPath.startsWith('/profile')} />
                 </div>
             </div>
 
             <div className="mt-auto p-4">
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-zinc-900 border border-zinc-800">
                     <Avatar className="h-9 w-9 border border-zinc-700">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${auth.user?.wallet_address}`} />
+                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${auth?.user?.wallet_address ?? 'thena-user'}`} />
                         <AvatarFallback>US</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 overflow-hidden">
                         <p className="text-sm font-medium text-white truncate">
-                            {auth.user?.name || 'User'}
+                            {auth?.user?.name || 'User'}
                         </p>
                         <p className="text-xs text-zinc-500 truncate">
-                            {auth.user?.wallet_address?.substring(0, 4)}...{auth.user?.wallet_address?.substring(auth.user?.wallet_address?.length - 4)}
+                            {auth?.user?.wallet_address
+                                ? `${auth.user.wallet_address.substring(0, 4)}...${auth.user.wallet_address.substring(auth.user.wallet_address.length - 4)}`
+                                : 'Wallet not connected'}
                         </p>
                     </div>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-red-400">

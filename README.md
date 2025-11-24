@@ -100,8 +100,55 @@ Open your browser and navigate to: `http://localhost:8000`
 *   **Wallet Connection:** Connect Phantom or Solflare wallets.
 *   **Authentication:** Sign-in with Solana (SIWS) - completely passwordless.
 *   **Creator Dashboard:** Manage campaigns and track funding.
-*   **Campaign Creation:** Launch new crowdfunding campaigns with targets and deadlines.
+*   **Campaign Browsing:** Explore active campaigns on `/campaigns`, with demo campaigns shown when the database is empty.
+*   **Campaign Creation Wizard:** Start a campaign via a 3-step flow on `/campaigns/create` (details → funding → review).
 *   **Donations:** (In Progress) Contribute SOL to campaigns.
+
+## 🧱 Architecture Overview
+
+Thena is built as a **Laravel + Inertia + React** application:
+
+- **Laravel (Backend):**
+  - Handles routing, validation, database access, and wallet-auth APIs.
+  - Key routes:
+    - `/` → `Welcome` (landing page with hero, metrics, and CTAs).
+    - `/campaigns` → `Campaigns/Index` (browse campaigns).
+    - `/campaigns/create` → `Campaigns/Create` (multi-step wizard).
+  - `CampaignController` exposes `index`, `create`, and `store` actions.
+
+- **Inertia + React (Frontend):**
+  - `@inertiajs/react` connects Laravel responses to React components in `resources/js/Pages`.
+  - `useForm` is used for SPA-style forms (e.g. campaign wizard), posting JSON to Laravel and handling validation/errors without full reloads.
+
+- **UI & Styling:**
+  - Tailwind CSS v4 for utility-first styling.
+  - Shadcn UI components (Button, Card, Input, Label, Sheet, Avatar, Progress, etc.) for consistent, accessible UI primitives.
+  - `DashboardLayout.jsx` provides a responsive layout (sidebar + mobile sheet) for internal pages like the campaign wizard and dashboards.
+
+## 🔌 Key Libraries & How They Interact
+
+- **`@inertiajs/react` + Laravel Inertia:**
+  - Laravel controllers return `Inertia::render(...)` responses.
+  - The Inertia React adapter renders the corresponding JSX page and keeps URL + history in sync.
+
+- **Shadcn UI + Radix + Tailwind:**
+  - Shadcn components are imported from `@/components/ui/*` and styled with Tailwind classes.
+  - Radix primitives (e.g. `@radix-ui/react-icons`) are used inside components like `Sheet` and `DropdownMenu`.
+
+- **Solana & Wallets:**
+  - `@solana/web3.js` & `@solana/spl-token` underpin transaction creation and token operations.
+  - `@reown/appkit` + `@reown/appkit-adapter-solana` provide a wallet-connect modal for Phantom, Solflare, etc.
+  - `@solana/wallet-adapter-react`, `@solana/wallet-adapter-react-ui`, and `@solana/wallet-adapter-wallets` supply wallet context/hooks for React.
+  - Backend `WalletAuthController` pairs with these to implement SIWS-style login using Laravel sessions.
+
+- **Solana PHP SDK:**
+  - `attestto/solana-php-sdk` is available for server-side Solana operations (verifying signatures, indexing transactions, future on-chain logic).
+
+Together, these pieces allow you to:
+
+1. Render marketing and dashboard views with React + Shadcn on top of Laravel.
+2. Connect a Solana wallet in the browser, sign messages, and authenticate to Laravel.
+3. Create and browse crowdfunding campaigns, with donation flows to be layered on next.
 
 ## 🤝 Contributing
 

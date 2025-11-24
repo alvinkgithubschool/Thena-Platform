@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import { Wallet, Clock, Target, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -24,6 +24,55 @@ export default function Index({ campaigns }) {
         return days > 0 ? `${days} days left` : 'Ended';
     };
 
+    const [search, setSearch] = useState('');
+
+    const demoCampaigns = [
+        {
+            id: 'demo-1',
+            title: 'Afrofusion Studio Sessions',
+            description: 'Fund studio time for an emerging Afrofusion artist recording their debut EP.',
+            creator_wallet: 'DEMOwALLeT1234',
+            current_amount_sol: 32.4,
+            target_amount_sol: 80,
+            deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString(),
+            image_url: 'https://placehold.co/600x400/18181b/f97316?text=Afrofusion+Sessions',
+        },
+        {
+            id: 'demo-2',
+            title: 'Indie Game Proto: Lagos Drift',
+            description: 'A Solana-themed racing game built by a small indie studio in Lagos.',
+            creator_wallet: 'DEMOwALLeT5678',
+            current_amount_sol: 54.1,
+            target_amount_sol: 120,
+            deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 21).toISOString(),
+            image_url: 'https://placehold.co/600x400/18181b/facc15?text=Lagos+Drift',
+        },
+        {
+            id: 'demo-3',
+            title: 'Documentary: Creators on Chain',
+            description: 'A short documentary following three African creators using Web3 for funding.',
+            creator_wallet: 'DEMOwALLeT9012',
+            current_amount_sol: 18.9,
+            target_amount_sol: 60,
+            deadline: new Date(Date.now() + 1000 * 60 * 60 * 24 * 9).toISOString(),
+            image_url: 'https://placehold.co/600x400/18181b/22c55e?text=Creators+on+Chain',
+        },
+    ];
+
+    const hasRealCampaigns = campaigns && campaigns.length > 0;
+
+    const listToRender = useMemo(() => {
+        const base = hasRealCampaigns ? campaigns : demoCampaigns;
+
+        if (!search) return base;
+
+        const query = search.toLowerCase();
+        return base.filter((campaign) =>
+            campaign.title.toLowerCase().includes(query) ||
+            campaign.description.toLowerCase().includes(query)
+        );
+    }, [hasRealCampaigns, campaigns, demoCampaigns, search]);
+
     return (
         <div className="min-h-screen bg-black text-white selection:bg-orange-500 selection:text-white">
             <Head title="Browse Campaigns" />
@@ -43,9 +92,20 @@ export default function Index({ campaigns }) {
 
             <main className="container mx-auto px-6 py-12">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight mb-2">Explore Projects</h1>
-                        <p className="text-zinc-400">Discover and fund the next wave of African creativity.</p>
+                    <div className="space-y-3 w-full md:w-auto">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight mb-2">Explore Projects</h1>
+                            <p className="text-zinc-400">Discover and fund the next wave of African creativity.</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-3 sm:items-center max-w-xl">
+                            <input
+                                type="text"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                placeholder="Search by title or description"
+                                className="w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            />
+                        </div>
                     </div>
                     <Link href="/campaigns/create">
                         <Button className="bg-orange-500 hover:bg-orange-600 text-white">
@@ -54,20 +114,22 @@ export default function Index({ campaigns }) {
                     </Link>
                 </div>
 
-                {campaigns.length === 0 ? (
-                    <div className="text-center py-20 border border-dashed border-zinc-800 rounded-lg">
-                        <h3 className="text-xl font-medium text-zinc-300 mb-2">No active campaigns yet</h3>
-                        <p className="text-zinc-500 mb-6">Be the first to launch a project on Thena.</p>
+                {!hasRealCampaigns && (
+                    <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="text-sm text-zinc-400">
+                            Showing <span className="font-semibold text-zinc-200">demo campaigns</span> until real projects are launched.
+                        </div>
                         <Link href="/campaigns/create">
-                            <Button variant="outline" className="border-zinc-700 text-black hover:bg-zinc-800 hover:text-white">
-                                Launch Campaign
+                            <Button variant="outline" className="border-zinc-700 text-white hover:bg-zinc-800">
+                                Be the first to launch
                             </Button>
                         </Link>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {campaigns.map((campaign) => (
-                            <Card key={campaign.id} className="bg-zinc-900 border-zinc-800 text-white flex flex-col h-full hover:border-zinc-700 transition-colors">
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {listToRender.map((campaign) => (
+                        <Card key={campaign.id} className="bg-zinc-900 border-zinc-800 text-white flex flex-col h-full hover:border-zinc-700 transition-colors">
                                 <div className="h-48 w-full bg-zinc-800 relative overflow-hidden rounded-t-lg">
                                     {/* Use placeholder if no image, or the stored image URL */}
                                     <img 
@@ -117,16 +179,24 @@ export default function Index({ campaigns }) {
                                 </CardContent>
                                 
                                 <CardFooter className="pt-2">
-                                    <Link href={`/campaigns/${campaign.id}`} className="w-full">
-                                        <Button className="w-full bg-zinc-100 text-black hover:bg-zinc-200 font-medium">
-                                            Back this Project <ArrowRight className="w-4 h-4 ml-2" />
+                                    {hasRealCampaigns ? (
+                                        <Link href={`/campaigns/${campaign.id}`} className="w-full">
+                                            <Button className="w-full bg-zinc-100 text-black hover:bg-zinc-200 font-medium">
+                                                Back this Project <ArrowRight className="w-4 h-4 ml-2" />
+                                            </Button>
+                                        </Link>
+                                    ) : (
+                                        <Button
+                                            disabled
+                                            className="w-full bg-zinc-900 text-zinc-500 border border-zinc-800 cursor-default"
+                                        >
+                                            Demo data • Connect wallet to launch
                                         </Button>
-                                    </Link>
+                                    )}
                                 </CardFooter>
                             </Card>
                         ))}
                     </div>
-                )}
             </main>
 
             <footer className="border-t border-zinc-900 py-12 mt-20 bg-black">
